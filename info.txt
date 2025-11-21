@@ -1,0 +1,12 @@
+Aplicatie de gestiune persoane
+
+- sa afiseze o lista de persoane - functie de search; elemente selectabile cu afisre detalii
+
+- un dialog pt adaugare/editare persoana - cu toate datele de pe buletin; cu validari
+
+- functie de stergere persoana - un dialog de confirmare
+
+- functie de copiere de date personale in clipboard - text - o propozitie cu sens
+
+- functie de incarcare poza act de identitate
+
