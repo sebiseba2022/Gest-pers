@@ -1,190 +1,11 @@
-import './style.css';
+import { state, getFilteredPersons } from './state.js';
+import { handleSearch, handleSelectPerson } from './search.js';
+import { handleAdd, handleEdit, handleSave, handlePhotoUpload, removePhoto } from './add.js';
+import { handleDelete, confirmDelete } from './delete.js';
+import { handleCopy } from './clipboard.js';
+import { updateFormField, hideDialog } from './validation.js';
 
-// State management
-let state = {
-  persons: [
-    {
-      id: 1,
-      nume: 'Popescu',
-      prenume: 'Ion',
-      cnp: '1850312123456',
-      seria: 'RX',
-      numar: '123456',
-      emis: '2020-01-15',
-      valabil: '2030-01-15',
-      adresa: 'Str. Mihai Viteazu nr. 10, Sibiu',
-      photo: null
-    }
-  ],
-  searchTerm: '',
-  selectedPerson: null,
-  editingPerson: null,
-  formData: {},
-  formErrors: {}
-};
-
-// Helper functions
-function getFilteredPersons() {
-  return state.persons.filter(p => 
-    `${p.nume} ${p.prenume}`.toLowerCase().includes(state.searchTerm.toLowerCase())
-  );
-}
-
-function validateForm() {
-  const errors = {};
-  const { nume, prenume, cnp, seria, numar, emis, valabil, adresa } = state.formData;
-  
-  if (!nume?.trim()) errors.nume = 'Numele este obligatoriu';
-  if (!prenume?.trim()) errors.prenume = 'Prenumele este obligatoriu';
-  
-  if (!cnp?.trim()) {
-    errors.cnp = 'CNP-ul este obligatoriu';
-  } else if (!/^\d{13}$/.test(cnp)) {
-    errors.cnp = 'CNP-ul trebuie să conțină exact 13 cifre';
-  }
-  
-  if (!seria?.trim()) {
-    errors.seria = 'Seria este obligatorie';
-  } else if (!/^[A-Z]{2}$/.test(seria)) {
-    errors.seria = 'Seria trebuie să conțină exact 2 litere mari';
-  }
-  
-  if (!numar?.trim()) {
-    errors.numar = 'Numărul este obligatoriu';
-  } else if (!/^\d{6}$/.test(numar)) {
-    errors.numar = 'Numărul trebuie să conțină exact 6 cifre';
-  }
-  
-  if (!emis) errors.emis = 'Data emiterii este obligatorie';
-  if (!valabil) errors.valabil = 'Data valabilității este obligatorie';
-  
-  if (emis && valabil && emis >= valabil) {
-    errors.valabil = 'Data valabilității trebuie să fie după data emiterii';
-  }
-  
-  if (!adresa?.trim()) errors.adresa = 'Adresa este obligatorie';
-  
-  state.formErrors = errors;
-  return Object.keys(errors).length === 0;
-}
-
-// Event handlers
-function handleSearch(e) {
-  state.searchTerm = e.target.value;
-  render();
-}
-
-function handleSelectPerson(person) {
-  state.selectedPerson = person;
-  render();
-}
-
-function handleAdd() {
-  state.editingPerson = null;
-  state.formData = {
-    nume: '',
-    prenume: '',
-    cnp: '',
-    seria: '',
-    numar: '',
-    emis: '',
-    valabil: '',
-    adresa: '',
-    photo: null
-  };
-  state.formErrors = {};
-  showDialog('addEditDialog');
-}
-
-function handleEdit() {
-  if (!state.selectedPerson) return;
-  state.editingPerson = state.selectedPerson;
-  state.formData = { ...state.selectedPerson };
-  state.formErrors = {};
-  showDialog('addEditDialog');
-}
-
-function handleDelete() {
-  if (!state.selectedPerson) return;
-  showDialog('deleteDialog');
-}
-
-function handleCopy() {
-  if (!state.selectedPerson) return;
-  
-  const p = state.selectedPerson;
-  const text = `${p.prenume} ${p.nume}, CNP ${p.cnp}, deține actul de identitate seria ${p.seria} nr. ${p.numar}, emis la data de ${p.emis}, cu domiciliul în ${p.adresa}.`;
-  
-  navigator.clipboard.writeText(text).then(() => {
-    alert('Datele au fost copiate în clipboard!');
-  });
-}
-
-function handleSave() {
-  if (!validateForm()) {
-    render();
-    return;
-  }
-  
-  if (state.editingPerson) {
-    state.persons = state.persons.map(p => 
-      p.id === state.editingPerson.id ? { ...state.formData, id: p.id } : p
-    );
-    if (state.selectedPerson?.id === state.editingPerson.id) {
-      state.selectedPerson = { ...state.formData, id: state.editingPerson.id };
-    }
-  } else {
-    const newPerson = { ...state.formData, id: Date.now() };
-    state.persons.push(newPerson);
-  }
-  
-  hideDialog('addEditDialog');
-  render();
-}
-
-function confirmDelete() {
-  state.persons = state.persons.filter(p => p.id !== state.selectedPerson.id);
-  state.selectedPerson = null;
-  hideDialog('deleteDialog');
-  render();
-}
-
-function handlePhotoUpload(e) {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      state.formData.photo = reader.result;
-      render();
-    };
-    reader.readAsDataURL(file);
-  }
-}
-
-function removePhoto() {
-  state.formData.photo = null;
-  render();
-}
-
-function updateFormField(field, value) {
-  state.formData[field] = value;
-  if (state.formErrors[field]) {
-    delete state.formErrors[field];
-  }
-}
-
-// Dialog management
-function showDialog(dialogId) {
-  document.getElementById(dialogId).style.display = 'flex';
-  render();
-}
-
-function hideDialog(dialogId) {
-  document.getElementById(dialogId).style.display = 'none';
-}
-
-// Render function
-function render() {
+export function render() {
   const app = document.getElementById('app');
   const filteredPersons = getFilteredPersons();
   
@@ -197,6 +18,10 @@ function render() {
           <button id="addBtn" class="btn btn-primary">
             <span class="icon">+</span>
             <span>Add</span>
+          </button>
+          <button id="editBtn" class="btn btn-info" ${!state.selectedPerson ? 'disabled' : ''}>
+            <span class="icon">✏️</span>
+            <span>Edit</span>
           </button>
           <button id="deleteBtn" class="btn btn-danger" ${!state.selectedPerson ? 'disabled' : ''}>
             <span class="icon">🗑</span>
@@ -307,7 +132,7 @@ function render() {
       <div class="dialog-content">
         <div class="dialog-header">
           <h3>${state.editingPerson ? 'Editează Persoana' : 'Adaugă Persoană Nouă'}</h3>
-          <button class="close-btn" onclick="hideDialog('addEditDialog')">×</button>
+          <button class="close-btn" onclick="window.hideDialogGlobal('addEditDialog')">×</button>
         </div>
 
         <div class="dialog-body">
@@ -425,7 +250,7 @@ function render() {
         </div>
 
         <div class="dialog-footer">
-          <button class="btn btn-secondary" onclick="hideDialog('addEditDialog')">Anulează</button>
+          <button class="btn btn-secondary" onclick="window.hideDialogGlobal('addEditDialog')">Anulează</button>
           <button class="btn btn-primary" id="saveBtn">Salvează</button>
         </div>
       </div>
@@ -436,7 +261,7 @@ function render() {
       <div class="dialog-content small">
         <div class="dialog-header">
           <h3>Confirmare Ștergere</h3>
-          <button class="close-btn" onclick="hideDialog('deleteDialog')">×</button>
+          <button class="close-btn" onclick="window.hideDialogGlobal('deleteDialog')">×</button>
         </div>
 
         <div class="dialog-body">
@@ -444,7 +269,7 @@ function render() {
         </div>
 
         <div class="dialog-footer">
-          <button class="btn btn-secondary" onclick="hideDialog('deleteDialog')">Anulează</button>
+          <button class="btn btn-secondary" onclick="window.hideDialogGlobal('deleteDialog')">Anulează</button>
           <button class="btn btn-danger" id="confirmDeleteBtn">Șterge</button>
         </div>
       </div>
@@ -465,6 +290,9 @@ function attachEventListeners() {
   // Buttons
   const addBtn = document.getElementById('addBtn');
   if (addBtn) addBtn.addEventListener('click', handleAdd);
+
+  const editBtn = document.getElementById('editBtn');
+  if (editBtn) editBtn.addEventListener('click', handleEdit);
 
   const deleteBtn = document.getElementById('deleteBtn');
   if (deleteBtn) deleteBtn.addEventListener('click', handleDelete);
@@ -521,9 +349,3 @@ function attachEventListeners() {
   const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', confirmDelete);
 }
-
-// Make hideDialog available globally
-window.hideDialog = hideDialog;
-
-// Initialize app
-render();
