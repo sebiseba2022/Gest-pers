@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state, deletePersonFromDatabase } from './state.js';
 import { render } from './render.js';
 import { showDialog, hideDialog } from './validation.js';
 
@@ -7,9 +7,15 @@ export function handleDelete() {
   showDialog('deleteDialog');
 }
 
-export function confirmDelete() {
-  state.persons = state.persons.filter(p => p.id !== state.selectedPerson.id);
-  state.selectedPerson = null;
-  hideDialog('deleteDialog');
-  render();
+export async function confirmDelete() {
+  const personId = state.selectedPerson.id;
+  const success = await deletePersonFromDatabase(personId);
+  
+  if (success) {
+    state.selectedPerson = null;
+    hideDialog('deleteDialog');
+    render();
+  } else {
+    alert('Eroare la ștergere! Încercați din nou.');
+  }
 }

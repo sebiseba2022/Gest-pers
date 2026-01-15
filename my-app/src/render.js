@@ -33,6 +33,7 @@ export function render() {
 
         <!-- Search -->
         <div class="search-bar">
+          <label for="searchInput" style="display:none;">Caută persoană</label>
           <input 
             type="text" 
             id="searchInput" 
@@ -45,7 +46,7 @@ export function render() {
         <div class="person-list">
           ${filteredPersons.map(person => `
             <div 
-              class="person-item ${state.selectedPerson?.id === person.id ? 'selected' : ''}" 
+              class="person-item ${Number(state.selectedPerson?.id) === Number(person.id) ? 'selected' : ''}" 
               data-person-id="${person.id}"
             >
               <div class="person-name">${person.nume}, ${person.prenume}</div>
@@ -76,44 +77,44 @@ export function render() {
             <div class="details-content">
               <div class="detail-row">
                 <div class="detail-item">
-                  <label>Nume</label>
+                  <strong>Nume</strong>
                   <p>${state.selectedPerson.nume}</p>
                 </div>
                 <div class="detail-item">
-                  <label>Prenume</label>
+                  <strong>Prenume</strong>
                   <p>${state.selectedPerson.prenume}</p>
                 </div>
               </div>
 
               <div class="detail-item">
-                <label>CNP</label>
+                <strong>CNP</strong>
                 <p>${state.selectedPerson.cnp}</p>
               </div>
 
               <div class="detail-row">
                 <div class="detail-item">
-                  <label>Seria</label>
+                  <strong>Seria</strong>
                   <p>${state.selectedPerson.seria}</p>
                 </div>
                 <div class="detail-item">
-                  <label>Număr</label>
+                  <strong>Număr</strong>
                   <p>${state.selectedPerson.numar}</p>
                 </div>
               </div>
 
               <div class="detail-row">
                 <div class="detail-item">
-                  <label>Data Emiterii</label>
+                  <strong>Data Emiterii</strong>
                   <p>${state.selectedPerson.emis}</p>
                 </div>
                 <div class="detail-item">
-                  <label>Valabil până la</label>
+                  <strong>Valabil până la</strong>
                   <p>${state.selectedPerson.valabil}</p>
                 </div>
               </div>
 
               <div class="detail-item">
-                <label>Adresă</label>
+                <strong>Adresă</strong>
                 <p>${state.selectedPerson.adresa}</p>
               </div>
             </div>
@@ -138,7 +139,7 @@ export function render() {
         <div class="dialog-body">
           <div class="form-row">
             <div class="form-group">
-              <label>Nume *</label>
+              <label for="numeInput">Nume *</label>
               <input 
                 type="text" 
                 id="numeInput" 
@@ -149,7 +150,7 @@ export function render() {
             </div>
 
             <div class="form-group">
-              <label>Prenume *</label>
+              <label for="prenumeInput">Prenume *</label>
               <input 
                 type="text" 
                 id="prenumeInput" 
@@ -161,7 +162,7 @@ export function render() {
           </div>
 
           <div class="form-group">
-            <label>CNP *</label>
+            <label for="cnpInput">CNP *</label>
             <input 
               type="text" 
               id="cnpInput" 
@@ -174,7 +175,7 @@ export function render() {
 
           <div class="form-row">
             <div class="form-group">
-              <label>Seria *</label>
+              <label for="seriaInput">Seria *</label>
               <input 
                 type="text" 
                 id="seriaInput" 
@@ -186,7 +187,7 @@ export function render() {
             </div>
 
             <div class="form-group">
-              <label>Număr *</label>
+              <label for="numarInput">Număr *</label>
               <input 
                 type="text" 
                 id="numarInput" 
@@ -200,7 +201,7 @@ export function render() {
 
           <div class="form-row">
             <div class="form-group">
-              <label>Data Emiterii *</label>
+              <label for="emisInput">Data Emiterii *</label>
               <input 
                 type="date" 
                 id="emisInput" 
@@ -211,7 +212,7 @@ export function render() {
             </div>
 
             <div class="form-group">
-              <label>Valabil până la *</label>
+              <label for="validInput">Valabil până la *</label>
               <input 
                 type="date" 
                 id="validInput" 
@@ -223,7 +224,7 @@ export function render() {
           </div>
 
           <div class="form-group">
-            <label>Adresă *</label>
+            <label for="adresaInput">Adresă *</label>
             <textarea 
               id="adresaInput" 
               rows="3"
@@ -233,9 +234,9 @@ export function render() {
           </div>
 
           <div class="form-group">
-            <label>Poză Act Identitate</label>
+            <p style="margin: 0 0 10px 0;"><strong>Poză Act Identitate</strong></p>
             <div class="photo-upload">
-              <label class="upload-btn">
+              <label for="photoInput" class="upload-btn">
                 📤 Încarcă Poză
                 <input type="file" id="photoInput" accept="image/*" style="display: none;" />
               </label>
@@ -285,6 +286,10 @@ function attachEventListeners() {
   const searchInput = document.getElementById('searchInput');
   if (searchInput) {
     searchInput.addEventListener('input', handleSearch);
+    // Refocus if it was focused before
+    if (document.activeElement !== searchInput && state.searchTerm) {
+      // Don't refocus if user is typing
+    }
   }
 
   // Buttons
@@ -302,11 +307,15 @@ function attachEventListeners() {
 
   // Person list
   document.querySelectorAll('.person-item').forEach(item => {
-    const personId = parseInt(item.dataset.personId);
-    const person = state.persons.find(p => p.id === personId);
+    const personId = Number(item.dataset.personId);
+    const person = state.persons.find((p) => Number(p.id) === personId);
     
-    item.addEventListener('click', () => handleSelectPerson(person));
+    item.addEventListener('click', () => {
+      if (!person) return;
+      handleSelectPerson(person);
+    });
     item.addEventListener('dblclick', () => {
+      if (!person) return;
       handleSelectPerson(person);
       handleEdit();
     });

@@ -1,10 +1,11 @@
-import { state } from './state.js';
+import { state, addPersonToDatabase, updatePersonInDatabase } from './state.js';
 import { render } from './render.js';
 import { showDialog, hideDialog, validateForm } from './validation.js';
 
 export function handleAdd() {
   state.editingPerson = null;
   state.formData = {
+    id: null,
     nume: '',
     prenume: '',
     cnp: '',
@@ -16,33 +17,50 @@ export function handleAdd() {
     photo: null
   };
   state.formErrors = {};
+  render();
   showDialog('addEditDialog');
 }
 
 export function handleEdit() {
   if (!state.selectedPerson) return;
   state.editingPerson = state.selectedPerson;
-  state.formData = { ...state.selectedPerson };
+  state.formData = {
+    id: state.selectedPerson.id ?? null,
+    nume: state.selectedPerson.nume ?? '',
+    prenume: state.selectedPerson.prenume ?? '',
+    cnp: state.selectedPerson.cnp ?? '',
+    seria: state.selectedPerson.seria ?? '',
+    numar: state.selectedPerson.numar ?? '',
+    emis: state.selectedPerson.emis ?? '',
+    valabil: state.selectedPerson.valabil ?? '',
+    adresa: state.selectedPerson.adresa ?? '',
+    photo: state.selectedPerson.photo ?? null
+  };
   state.formErrors = {};
+  render();
   showDialog('addEditDialog');
 }
 
-export function handleSave() {
+export async function handleSave() {
   if (!validateForm()) {
     render();
     return;
   }
   
   if (state.editingPerson) {
-    state.persons = state.persons.map(p => 
-      p.id === state.editingPerson.id ? { ...state.formData, id: p.id } : p
-    );
-    if (state.selectedPerson?.id === state.editingPerson.id) {
-      state.selectedPerson = { ...state.formData, id: state.editingPerson.id };
+    // Update existing person
+    const updatedPerson = { ...state.formData, id: state.editingPerson.id };
+    const success = await updatePersonInDatabase(updatedPerson);
+    if (success) {
+      state.selectedPerson = updatedPerson;
     }
   } else {
-    const newPerson = { ...state.formData, id: Date.now() };
-    state.persons.push(newPerson);
+    // Add new person
+    const newPerson = { ...state.formData };
+    const success = await addPersonToDatabase(newPerson);
+    if (success) {
+      state.selectedPerson = newPerson;
+    }
   }
   
   hideDialog('addEditDialog');
